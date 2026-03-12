@@ -11,6 +11,7 @@ class OrderHistoryList extends HTMLElement {
     this.currentFilter = 'all';
     this.currentPage = 1;
     this.perPage = 20;
+    this.productImages = {}; // handle -> image URL cache
   }
 
   connectedCallback() {
@@ -37,11 +38,35 @@ class OrderHistoryList extends HTMLElement {
 
       const data = await response.json();
       this.orders = data.orders || [];
+
+      await this.fetchProductImages();
       this.applyFilter();
     } catch (error) {
       console.error('Order history fetch error:', error);
       this.renderError(error.message);
     }
+  }
+
+  async fetchProductImages() {
+    const handles = new Set();
+    for (const order of this.orders) {
+      for (const item of order.items || []) {
+        if (item.productHandle) handles.add(item.productHandle);
+      }
+    }
+
+    await Promise.all([...handles].map(async (handle) => {
+      try {
+        const res = await fetch(`/products/${handle}.js`);
+        if (!res.ok) return;
+        const product = await res.json();
+        if (product.featured_image) {
+          this.productImages[handle] = product.featured_image;
+        }
+      } catch (_) {
+        // silently skip missing products
+      }
+    }));
   }
 
   applyFilter() {
@@ -142,10 +167,10 @@ class OrderHistoryList extends HTMLElement {
           <thead role="rowgroup">
             <tr role="row">
               <th id="ColumnOrder" scope="col" role="columnheader">Order</th>
+              <th id="ColumnItems" scope="col" role="columnheader">Items</th>
               <th id="ColumnDate" scope="col" role="columnheader">Date</th>
               <th id="ColumnSource" scope="col" role="columnheader">Source</th>
               <th id="ColumnPayment" scope="col" role="columnheader">Payment</th>
-              <th id="ColumnFulfillment" scope="col" role="columnheader">Fulfillment</th>
               <th id="ColumnTotal" scope="col" role="columnheader">Total</th>
             </tr>
           </thead>
@@ -154,6 +179,18 @@ class OrderHistoryList extends HTMLElement {
               <tr role="row">
                 <td headers="ColumnOrder" role="cell" data-label="Order">
                   ${order.orderNumber}
+                </td>
+                <td headers="ColumnItems" role="cell" data-label="Items">
+                  <div class="order-history__items">
+                    ${(order.items || []).map((item) => {
+                      const imgUrl = item.productHandle && this.productImages[item.productHandle];
+                      const linkStart = item.productHandle ? `<a href="/products/${item.productHandle}" title="${item.productName}">` : '';
+                      const linkEnd = item.productHandle ? '</a>' : '';
+                      return imgUrl
+                        ? `${linkStart}<img class="order-history__item-img" src="${imgUrl}" alt="${item.productName}" width="50" height="50" loading="lazy">${linkEnd}`
+                        : `<span class="order-history__item-name">${item.productName}</span>`;
+                    }).join('')}
+                  </div>
                 </td>
                 <td headers="ColumnDate" role="cell" data-label="Date">
                   <time datetime="${order.orderDate}">${this.formatDate(order.orderDate)}</time>
@@ -165,9 +202,6 @@ class OrderHistoryList extends HTMLElement {
                 </td>
                 <td headers="ColumnPayment" role="cell" data-label="Payment">
                   ${this.formatStatus(order.financialStatus)}
-                </td>
-                <td headers="ColumnFulfillment" role="cell" data-label="Fulfillment">
-                  ${this.formatStatus(order.fulfillmentStatus)}
                 </td>
                 <td headers="ColumnTotal" role="cell" data-label="Total">
                   ${this.formatCurrency(order.totalAmount, order.currency)}

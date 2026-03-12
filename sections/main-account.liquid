@@ -59,6 +59,30 @@
     color: #1565c0;
   }
 
+  .order-history__items {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .order-history__item-img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid rgba(var(--color-foreground), 0.1);
+    display: block;
+  }
+
+  .order-history__item-img:hover {
+    opacity: 0.85;
+  }
+
+  .order-history__item-name {
+    font-size: 0.875rem;
+  }
+
   .order-history__loading {
     padding: 2rem 0;
     text-align: center;
