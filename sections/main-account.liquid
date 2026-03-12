@@ -63,7 +63,7 @@
   .oh-col--source  { flex: 0 0 14%; }
   .oh-col--date    { flex: 0 0 20%; }
   .oh-col--payment { flex: 0 0 16%; }
-  .oh-col--total   { flex: 0 0 16%; font-weight: 600; }
+  .oh-col--total   { flex: 0 0 16%; font-weight: 600; overflow: visible;}
   .oh-col--chevron { flex: 0 0 6%; text-align: center; }
 
   /* Column header row */
@@ -172,7 +172,7 @@
   /* Item columns */
   .oh-icol { flex-shrink: 0; }
   .oh-icol--img   { width: 72px; margin-right: 1rem; }
-  .oh-icol--title { flex: 1; font-size: 1.5rem; padding-right: 0.5rem; }
+  .oh-icol--title { flex: 1; font-size: 1.5rem; padding-right: 0.5rem; text-wrap: auto;}
   .oh-icol--title small { display: block; color: #888; font-size: 0.875rem; margin-top: 0.15rem; }
   .oh-icol--qty   { width: 50px; color: #555; font-size: 1.5rem; }
   .oh-icol--price { width: 80px; font-weight: 500; font-size: 1.5rem; text-align: right; }
@@ -232,7 +232,7 @@
   /* Mobile: hide date and payment columns to save space */
   @media screen and (max-width: 749px) {
     .oh-col--date, .oh-col--payment { display: none; }
-    .oh-icol--qty { display: none; }
+    ..oh-col--source, .oh-col--id, ..oh-col--total { flex: 0 0 33%; }
   }
 {%- endstyle -%}
 
