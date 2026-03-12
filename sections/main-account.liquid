@@ -50,26 +50,31 @@
     font-size: 0.875rem;
   }
 
-  /* Column layout — shared between head and rows */
-  .oh-table__head,
-  .oh-order__row {
-    display: flex;
-    align-items: center;
-    width: 100%;
+  /* Shared column definitions — identical for header and data rows */
+  .oh-col {
+    box-sizing: border-box;
+    padding: 0.85rem 0.75rem;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .oh-col { padding: 0.75rem 0.75rem; flex-shrink: 0; }
-  .oh-col--id       { flex: 2; min-width: 0; font-weight: 500; text-align: left; }
-  .oh-col--source   { flex: 1; }
-  .oh-col--date     { flex: 1.5; }
-  .oh-col--payment  { flex: 1; }
-  .oh-col--total    { flex: 1; font-weight: 600; }
-  .oh-col--chevron  { width: 2rem; text-align: center; padding: 0.75rem 0.5rem; }
+  .oh-col--id      { flex: 0 0 28%; min-width: 0; font-weight: 500; }
+  .oh-col--source  { flex: 0 0 14%; }
+  .oh-col--date    { flex: 0 0 20%; }
+  .oh-col--payment { flex: 0 0 16%; }
+  .oh-col--total   { flex: 0 0 16%; font-weight: 600; }
+  .oh-col--chevron { flex: 0 0 6%; text-align: center; }
 
   /* Column header row */
   .oh-table__head {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
     background: #f7f7f7;
     border-bottom: 1px solid #e0e0e0;
-    font-size: 1.25rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -82,21 +87,21 @@
     background: #fff;
     padding: 0 !important;
     margin: 0 !important;
+    display: block !important;
   }
   .oh-order:last-child { border-bottom: none; }
 
-  /* Clickable order row — !important overrides theme button styles */
+  /* Clickable order row — all:unset removes all browser button defaults */
   .oh-order__row {
-    background: #fff !important;
-    border: none !important;
-    border-bottom: 1px solid #ebebeb !important;
+    all: unset;
+    box-sizing: border-box;
+    display: flex !important;
+    align-items: center;
+    width: 100%;
     cursor: pointer;
-    font-family: inherit;
-    font-size: inherit;
-    color: #111 !important;
-    text-align: left;
-    transition: none;
-    padding: 0;
+    background: #fff;
+    color: #111;
+    border-bottom: 1px solid #ebebeb;
   }
 
   /* Chevron */
@@ -116,7 +121,7 @@
     display: inline-block;
     padding: 0.15rem 0.5rem;
     border-radius: 3px;
-    font-size: 0.7rem;
+    font-size: 1rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
