@@ -17,32 +17,29 @@ class OrderHistoryList extends HTMLElement {
   async fetchOrders() {
     this.renderLoading();
     try {
-      const response = await fetch(this.proxyUrl, { headers: { Accept: 'application/json' } });
-      if (response.status === 401) { this.renderAuthError(); return; }
-      if (!response.ok) throw new Error(`Failed to fetch orders (${response.status})`);
-      const data = await response.json();
+      const res = await fetch(this.proxyUrl, { headers: { Accept: 'application/json' } });
+      if (res.status === 401) { this.renderAuthError(); return; }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
       this.orders = data.orders || [];
       await this.fetchProductImages();
       this.applyFilter();
-    } catch (error) {
-      console.error('Order history fetch error:', error);
+    } catch (e) {
+      console.error(e);
       this.renderError();
     }
   }
 
   async fetchProductImages() {
-    const handles = new Set();
-    for (const order of this.orders) {
-      for (const item of order.items || []) {
-        if (item.productHandle) handles.add(item.productHandle);
-      }
-    }
-    await Promise.all([...handles].map(async (handle) => {
+    const handles = [...new Set(
+      this.orders.flatMap((o) => (o.items || []).map((i) => i.productHandle).filter(Boolean))
+    )];
+    await Promise.all(handles.map(async (handle) => {
       try {
         const res = await fetch(`/products/${handle}.js`);
         if (!res.ok) return;
-        const product = await res.json();
-        if (product.featured_image) this.productImages[handle] = product.featured_image;
+        const p = await res.json();
+        if (p.featured_image) this.productImages[handle] = p.featured_image;
       } catch (_) {}
     }));
   }
@@ -64,115 +61,121 @@ class OrderHistoryList extends HTMLElement {
     return Math.ceil(this.filteredOrders.length / this.perPage);
   }
 
-  formatDate(d) {
+  fmtDate(d) {
     return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  formatCurrency(amount, currency) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(amount);
+  fmtCurrency(n, currency) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(n);
   }
 
-  formatStatus(s) {
-    return s ? s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '';
+  fmtStatus(s) {
+    return s ? s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '—';
   }
 
-  renderLoading() {
-    this.innerHTML = `<div class="oh-loading"><p>Loading your order history...</p></div>`;
-  }
-
-  renderAuthError() {
-    this.innerHTML = `<p>Please log in to view your order history.</p>`;
-  }
-
-  renderError() {
-    this.innerHTML = `<div class="oh-error"><p>Unable to load order history. Please try again later.</p></div>`;
-  }
+  renderLoading()   { this.innerHTML = `<div class="oh-state">Loading your order history…</div>`; }
+  renderAuthError() { this.innerHTML = `<div class="oh-state">Please log in to view your order history.</div>`; }
+  renderError()     { this.innerHTML = `<div class="oh-state oh-state--error">Unable to load order history. Please try again later.</div>`; }
 
   render() {
     if (this.orders.length === 0) {
-      this.innerHTML = `<p>You haven't placed any orders yet.</p>`;
+      this.innerHTML = `<div class="oh-state">You haven't placed any orders yet.</div>`;
       return;
     }
 
     const onlineCount = this.orders.filter((o) => o.source === 'shopify').length;
-    const posCount = this.orders.filter((o) => o.source === 'pos').length;
+    const posCount    = this.orders.filter((o) => o.source === 'pos').length;
 
-    const filtersHTML = `
+    const filters = `
       <div class="oh-filters">
-        <button class="oh-filter${this.currentFilter === 'all' ? ' active' : ''}" data-filter="all" type="button">All (${this.orders.length})</button>
-        <button class="oh-filter${this.currentFilter === 'shopify' ? ' active' : ''}" data-filter="shopify" type="button">Online (${onlineCount})</button>
-        <button class="oh-filter${this.currentFilter === 'pos' ? ' active' : ''}" data-filter="pos" type="button">In-Store (${posCount})</button>
-      </div>
-    `;
+        <button class="oh-filter${this.currentFilter === 'all'     ? ' is-active' : ''}" data-filter="all"     type="button">All (${this.orders.length})</button>
+        <button class="oh-filter${this.currentFilter === 'shopify' ? ' is-active' : ''}" data-filter="shopify" type="button">Online (${onlineCount})</button>
+        <button class="oh-filter${this.currentFilter === 'pos'     ? ' is-active' : ''}" data-filter="pos"     type="button">In-Store (${posCount})</button>
+      </div>`;
 
-    const ordersHTML = this.paginatedOrders.length === 0
-      ? `<p class="oh-empty">No orders found.</p>`
-      : `<div class="oh-list">
-          ${this.paginatedOrders.map((order) => `
-            <div class="oh-order" data-order-id="${order.sourceOrderId}">
-              <button type="button" class="oh-order__header" aria-expanded="false">
-                <div class="oh-order__primary">
-                  <span class="oh-order__number">${order.orderNumber}</span>
-                  <span class="oh-badge oh-badge--${order.source}">${order.source === 'shopify' ? 'Online' : 'In-Store'}</span>
-                </div>
-                <div class="oh-order__secondary">
-                  <span class="oh-order__date">${this.formatDate(order.orderDate)}</span>
-                  <span class="oh-order__status">${this.formatStatus(order.financialStatus)}</span>
-                  <span class="oh-order__total">${this.formatCurrency(order.totalAmount, order.currency)}</span>
-                  <span class="oh-chevron" aria-hidden="true">&#8250;</span>
-                </div>
-              </button>
-              <div class="oh-order__items" hidden>
-                ${(order.items || []).map((item) => {
-                  const imgUrl = item.productHandle && this.productImages[item.productHandle];
-                  const imgHTML = imgUrl
-                    ? `<img class="oh-item__img" src="${imgUrl}" alt="${item.productName}" width="72" height="72" loading="lazy">`
-                    : `<div class="oh-item__img oh-item__img--placeholder"></div>`;
-                  const content = `
-                    ${imgHTML}
-                    <div class="oh-item__details">
-                      <span class="oh-item__title">${item.productName}${item.variantName ? ` — ${item.variantName}` : ''}</span>
-                      <span class="oh-item__meta">Qty: ${item.quantity}&nbsp;&nbsp;·&nbsp;&nbsp;${this.formatCurrency(item.price, order.currency)}</span>
-                    </div>
-                  `;
-                  return item.productHandle
-                    ? `<a href="/products/${item.productHandle}" class="oh-item">${content}</a>`
-                    : `<div class="oh-item">${content}</div>`;
-                }).join('')}
+    const noOrders = this.paginatedOrders.length === 0;
+
+    const table = noOrders ? `<p class="oh-state">No orders match this filter.</p>` : `
+      <div class="oh-table">
+
+        <div class="oh-table__head">
+          <div class="oh-col oh-col--id">Order</div>
+          <div class="oh-col oh-col--source">Source</div>
+          <div class="oh-col oh-col--date">Date</div>
+          <div class="oh-col oh-col--payment">Payment</div>
+          <div class="oh-col oh-col--total">Total</div>
+          <div class="oh-col oh-col--chevron"></div>
+        </div>
+
+        ${this.paginatedOrders.map((order) => `
+          <div class="oh-order">
+
+            <button type="button" class="oh-order__row" aria-expanded="false" data-order-id="${order.sourceOrderId}">
+              <div class="oh-col oh-col--id">${order.orderNumber}</div>
+              <div class="oh-col oh-col--source">
+                <span class="oh-badge oh-badge--${order.source}">${order.source === 'shopify' ? 'Online' : 'In-Store'}</span>
               </div>
-            </div>
-          `).join('')}
-        </div>`;
+              <div class="oh-col oh-col--date">${this.fmtDate(order.orderDate)}</div>
+              <div class="oh-col oh-col--payment">${this.fmtStatus(order.financialStatus)}</div>
+              <div class="oh-col oh-col--total">${this.fmtCurrency(order.totalAmount, order.currency)}</div>
+              <div class="oh-col oh-col--chevron"><span class="oh-chevron">&#8250;</span></div>
+            </button>
 
-    const paginationHTML = this.totalPages > 1 ? `
-      <nav class="oh-pagination" aria-label="Order history pages">
-        ${this.currentPage > 1 ? `<button type="button" class="oh-page-btn" data-page="${this.currentPage - 1}">&laquo;</button>` : ''}
+            <div class="oh-items">
+              <div class="oh-items__head">
+                <div class="oh-icol oh-icol--img"></div>
+                <div class="oh-icol oh-icol--title">Product</div>
+                <div class="oh-icol oh-icol--qty">Qty</div>
+                <div class="oh-icol oh-icol--price">Price</div>
+              </div>
+              ${(order.items || []).map((item) => {
+                const imgUrl = item.productHandle && this.productImages[item.productHandle];
+                const img = imgUrl
+                  ? `<img class="oh-item__img" src="${imgUrl}" alt="${item.productName}" width="64" height="64" loading="lazy">`
+                  : `<div class="oh-item__img oh-item__img--empty"></div>`;
+                const inner = `
+                  <div class="oh-icol oh-icol--img">${img}</div>
+                  <div class="oh-icol oh-icol--title">${item.productName}${item.variantName ? `<br><small>${item.variantName}</small>` : ''}</div>
+                  <div class="oh-icol oh-icol--qty">${item.quantity}</div>
+                  <div class="oh-icol oh-icol--price">${this.fmtCurrency(item.price, order.currency)}</div>
+                `;
+                return item.productHandle
+                  ? `<a href="/products/${item.productHandle}" class="oh-item">${inner}</a>`
+                  : `<div class="oh-item">${inner}</div>`;
+              }).join('')}
+            </div>
+
+          </div>
+        `).join('')}
+      </div>`;
+
+    const pagination = this.totalPages > 1 ? `
+      <div class="oh-pagination">
+        ${this.currentPage > 1 ? `<button type="button" class="oh-page" data-page="${this.currentPage - 1}">&laquo;</button>` : ''}
         ${Array.from({ length: this.totalPages }, (_, i) => i + 1).map((p) =>
           p === this.currentPage
-            ? `<span class="oh-page-btn oh-page-btn--current" aria-current="page">${p}</span>`
-            : `<button type="button" class="oh-page-btn" data-page="${p}">${p}</button>`
+            ? `<span class="oh-page oh-page--current">${p}</span>`
+            : `<button type="button" class="oh-page" data-page="${p}">${p}</button>`
         ).join('')}
-        ${this.currentPage < this.totalPages ? `<button type="button" class="oh-page-btn" data-page="${this.currentPage + 1}">&raquo;</button>` : ''}
-      </nav>` : '';
+        ${this.currentPage < this.totalPages ? `<button type="button" class="oh-page" data-page="${this.currentPage + 1}">&raquo;</button>` : ''}
+      </div>` : '';
 
-    this.innerHTML = filtersHTML + ordersHTML + paginationHTML;
+    this.innerHTML = filters + table + pagination;
 
-    // Accordion
-    this.querySelectorAll('.oh-order__header').forEach((btn) => {
+    // Accordion — toggle class, not hidden attribute (avoids CSS override issues)
+    this.querySelectorAll('.oh-order__row').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const expanded = btn.getAttribute('aria-expanded') === 'true';
-        btn.setAttribute('aria-expanded', String(!expanded));
-        btn.nextElementSibling.hidden = expanded;
+        const open = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!open));
+        btn.nextElementSibling.classList.toggle('oh-items--open', !open);
       });
     });
 
-    // Filters
     this.querySelectorAll('.oh-filter').forEach((btn) => {
       btn.addEventListener('click', () => { this.currentFilter = btn.dataset.filter; this.applyFilter(); });
     });
 
-    // Pagination
-    this.querySelectorAll('.oh-page-btn[data-page]').forEach((btn) => {
+    this.querySelectorAll('.oh-page[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => { this.currentPage = parseInt(btn.dataset.page, 10); this.render(); });
     });
   }
