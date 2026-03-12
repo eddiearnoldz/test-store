@@ -58,7 +58,7 @@
     width: 100%;
   }
   .oh-col { padding: 0.75rem 0.75rem; flex-shrink: 0; }
-  .oh-col--id       { flex: 2; min-width: 0; font-weight: 500; }
+  .oh-col--id       { flex: 2; min-width: 0; font-weight: 500; text-align: left; }
   .oh-col--source   { flex: 1; }
   .oh-col--date     { flex: 1.5; }
   .oh-col--payment  { flex: 1; }
@@ -80,19 +80,21 @@
   .oh-order {
     border-bottom: 1px solid #e0e0e0;
     background: #fff;
+    padding: 0 !important;
+    margin: 0 !important;
   }
   .oh-order:last-child { border-bottom: none; }
 
-  /* Clickable order row */
+  /* Clickable order row — !important overrides theme button styles */
   .oh-order__row {
-    background: #fff;
-    border: none;
+    background: #fff !important;
+    border: none !important;
+    border-bottom: 1px solid #ebebeb !important;
     cursor: pointer;
     font-family: inherit;
     font-size: inherit;
-    color: #111;
+    color: #111 !important;
     text-align: left;
-    border-bottom: 1px solid #ebebeb;
     transition: none;
   }
 
@@ -149,10 +151,11 @@
     background: #f2f2f2;
   }
 
-  /* Item row */
+  /* Item row — !important overrides theme link/anchor styles */
   .oh-item {
-    display: flex;
-    align-items: center;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
     padding: 0.6rem 0.75rem;
     border-bottom: 1px solid #ebebeb;
     text-decoration: none;
