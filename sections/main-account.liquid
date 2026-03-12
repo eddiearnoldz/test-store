@@ -59,28 +59,104 @@
     color: #1565c0;
   }
 
-  .order-history__items {
+  .order-history__order-row {
+    cursor: pointer;
+  }
+
+  .order-history__order-row:hover td {
+    background: rgba(var(--color-foreground), 0.03);
+  }
+
+  .order-history__toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
     display: flex;
-    gap: 0.4rem;
     align-items: center;
-    flex-wrap: wrap;
+    gap: 0.4rem;
+    text-align: left;
+  }
+
+  .order-history__toggle-chevron {
+    display: inline-block;
+    font-size: 1.2rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+    transform: rotate(0deg);
+  }
+
+  .order-history__order-row[aria-expanded="true"] .order-history__toggle-chevron {
+    transform: rotate(90deg);
+  }
+
+  .order-history__items-row td {
+    padding: 0 !important;
+  }
+
+  .order-history__items-cell {
+    padding: 0 !important;
+  }
+
+  .order-history__items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.75rem 1.5rem 1rem 2.5rem;
+    background: rgba(var(--color-foreground), 0.02);
+    border-bottom: 1px solid rgba(var(--color-foreground), 0.08);
+  }
+
+  .order-history__item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(var(--color-foreground), 0.06);
+  }
+
+  .order-history__item:last-child {
+    border-bottom: none;
+  }
+
+  .order-history__item-link {
+    flex-shrink: 0;
+    text-decoration: none;
   }
 
   .order-history__item-img {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     object-fit: cover;
     border-radius: 4px;
     border: 1px solid rgba(var(--color-foreground), 0.1);
     display: block;
+    flex-shrink: 0;
   }
 
-  .order-history__item-img:hover {
+  .order-history__item-img--placeholder {
+    background: rgba(var(--color-foreground), 0.06);
+  }
+
+  .order-history__item-link:hover .order-history__item-img {
     opacity: 0.85;
   }
 
-  .order-history__item-name {
+  .order-history__item-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .order-history__item-title {
     font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .order-history__item-meta {
+    font-size: 0.8rem;
+    color: rgba(var(--color-foreground), 0.6);
   }
 
   .order-history__loading {

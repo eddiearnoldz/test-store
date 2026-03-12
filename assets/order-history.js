@@ -133,6 +133,39 @@ class OrderHistoryList extends HTMLElement {
     `;
   }
 
+  renderItemsRow(order, colSpan) {
+    const items = order.items || [];
+    if (items.length === 0) return '';
+
+    const itemsHTML = items.map((item) => {
+      const imgUrl = item.productHandle && this.productImages[item.productHandle];
+      const imgHTML = imgUrl
+        ? `<img class="order-history__item-img" src="${imgUrl}" alt="${item.productName}" width="60" height="60" loading="lazy">`
+        : `<div class="order-history__item-img order-history__item-img--placeholder"></div>`;
+      const wrap = (inner) => item.productHandle
+        ? `<a href="/products/${item.productHandle}" class="order-history__item-link">${inner}</a>`
+        : inner;
+
+      return `
+        <div class="order-history__item">
+          ${wrap(imgHTML)}
+          <div class="order-history__item-details">
+            <span class="order-history__item-title">${item.productName}${item.variantName ? ` — ${item.variantName}` : ''}</span>
+            <span class="order-history__item-meta">Qty: ${item.quantity} &nbsp;·&nbsp; ${this.formatCurrency(item.price, order.currency)}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <tr class="order-history__items-row" data-items-for="${order.sourceOrderId}" hidden>
+        <td colspan="${colSpan}" class="order-history__items-cell">
+          <div class="order-history__items-list">${itemsHTML}</div>
+        </td>
+      </tr>
+    `;
+  }
+
   render() {
     if (this.filteredOrders.length === 0 && this.orders.length === 0) {
       this.innerHTML = '<p>You haven\'t placed any orders yet.</p>';
@@ -141,6 +174,7 @@ class OrderHistoryList extends HTMLElement {
 
     const onlineCount = this.orders.filter((o) => o.source === 'shopify').length;
     const posCount = this.orders.filter((o) => o.source === 'pos').length;
+    const colSpan = 5;
 
     const filtersHTML = `
       <div class="order-history__filters">
@@ -167,7 +201,6 @@ class OrderHistoryList extends HTMLElement {
           <thead role="rowgroup">
             <tr role="row">
               <th id="ColumnOrder" scope="col" role="columnheader">Order</th>
-              <th id="ColumnItems" scope="col" role="columnheader">Items</th>
               <th id="ColumnDate" scope="col" role="columnheader">Date</th>
               <th id="ColumnSource" scope="col" role="columnheader">Source</th>
               <th id="ColumnPayment" scope="col" role="columnheader">Payment</th>
@@ -176,21 +209,12 @@ class OrderHistoryList extends HTMLElement {
           </thead>
           <tbody role="rowgroup">
             ${this.paginatedOrders.map((order) => `
-              <tr role="row">
+              <tr role="row" class="order-history__order-row" data-order-id="${order.sourceOrderId}" aria-expanded="false">
                 <td headers="ColumnOrder" role="cell" data-label="Order">
-                  ${order.orderNumber}
-                </td>
-                <td headers="ColumnItems" role="cell" data-label="Items">
-                  <div class="order-history__items">
-                    ${(order.items || []).map((item) => {
-                      const imgUrl = item.productHandle && this.productImages[item.productHandle];
-                      const linkStart = item.productHandle ? `<a href="/products/${item.productHandle}" title="${item.productName}">` : '';
-                      const linkEnd = item.productHandle ? '</a>' : '';
-                      return imgUrl
-                        ? `${linkStart}<img class="order-history__item-img" src="${imgUrl}" alt="${item.productName}" width="50" height="50" loading="lazy">${linkEnd}`
-                        : `<span class="order-history__item-name">${item.productName}</span>`;
-                    }).join('')}
-                  </div>
+                  <button type="button" class="order-history__toggle" aria-label="Toggle items for order ${order.orderNumber}">
+                    <span class="order-history__toggle-chevron">&#8250;</span>
+                    ${order.orderNumber}
+                  </button>
                 </td>
                 <td headers="ColumnDate" role="cell" data-label="Date">
                   <time datetime="${order.orderDate}">${this.formatDate(order.orderDate)}</time>
@@ -207,6 +231,7 @@ class OrderHistoryList extends HTMLElement {
                   ${this.formatCurrency(order.totalAmount, order.currency)}
                 </td>
               </tr>
+              ${this.renderItemsRow(order, colSpan)}
             `).join('')}
           </tbody>
         </table>
@@ -236,7 +261,18 @@ class OrderHistoryList extends HTMLElement {
 
     this.innerHTML = filtersHTML + ordersHTML + paginationHTML;
 
-    // Attach filter event listeners
+    // Accordion toggle
+    this.querySelectorAll('.order-history__order-row').forEach((row) => {
+      row.addEventListener('click', () => {
+        const orderId = row.dataset.orderId;
+        const itemsRow = this.querySelector(`[data-items-for="${orderId}"]`);
+        const expanded = row.getAttribute('aria-expanded') === 'true';
+        row.setAttribute('aria-expanded', String(!expanded));
+        if (itemsRow) itemsRow.hidden = expanded;
+      });
+    });
+
+    // Filter buttons
     this.querySelectorAll('.order-history__filter-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.currentFilter = btn.dataset.filter;
@@ -244,7 +280,7 @@ class OrderHistoryList extends HTMLElement {
       });
     });
 
-    // Attach pagination event listeners
+    // Pagination
     this.querySelectorAll('.order-history__page-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.currentPage = parseInt(btn.dataset.page, 10);
