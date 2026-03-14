@@ -214,8 +214,8 @@
     border-radius: 3px;
     transition: background 0.15s, opacity 0.15s;
   }
-  .customer .oh-cancel-btn:hover:not(:disabled) { background: #a93226; }
-  .customer .oh-cancel-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .customer .oh-cancel-btn:hover:not(.oh-cancel-btn--busy):not(.oh-cancel-btn--done) { background: #a93226; }
+  .customer .oh-cancel-btn--busy { opacity: 0.6; cursor: not-allowed; }
   .customer .oh-cancel-btn--done { background: #888 !important; }
 
   /* Toast */

@@ -74,7 +74,8 @@ class OrderHistoryList extends HTMLElement {
   }
 
   async cancelOrder(sourceOrderId, btn) {
-    btn.disabled = true;
+    if (btn.classList.contains('oh-cancel-btn--busy')) return;
+    btn.classList.add('oh-cancel-btn--busy');
     btn.textContent = 'Cancelling...';
 
     try {
@@ -87,16 +88,15 @@ class OrderHistoryList extends HTMLElement {
       if (res.ok) {
         btn.textContent = 'Cancelled';
         btn.classList.add('oh-cancel-btn--done');
-        // Update local state so re-renders reflect the change
         const order = this.orders.find((o) => o.sourceOrderId === sourceOrderId);
         if (order) order.status = 'cancelled';
       } else {
-        btn.disabled = false;
+        btn.classList.remove('oh-cancel-btn--busy');
         btn.textContent = 'Cancel Order';
         this.showToast('Order cancellation unsuccessful. Please contact customer support.');
       }
     } catch (_) {
-      btn.disabled = false;
+      btn.classList.remove('oh-cancel-btn--busy');
       btn.textContent = 'Cancel Order';
       this.showToast('Order cancellation unsuccessful. Please contact customer support.');
     }
@@ -193,9 +193,9 @@ class OrderHistoryList extends HTMLElement {
 
               ${order.source === 'shopify' && order.fulfillmentStatus === 'unfulfilled' && order.status !== 'cancelled' ? `
                 <div class="oh-cancel-row">
-                  <button type="button" class="oh-cancel-btn" data-source-order-id="${order.sourceOrderId}">
+                  <div class="oh-cancel-btn" data-source-order-id="${order.sourceOrderId}">
                     Cancel Order
-                  </button>
+                  </div>
                 </div>
               ` : ''}
             </div>
@@ -226,11 +226,11 @@ class OrderHistoryList extends HTMLElement {
       });
     });
 
-    // Cancel buttons
-    this.querySelectorAll('.oh-cancel-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
+    // Cancel divs
+    this.querySelectorAll('.oh-cancel-btn').forEach((el) => {
+      el.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.cancelOrder(btn.dataset.sourceOrderId, btn);
+        this.cancelOrder(el.dataset.sourceOrderId, el);
       });
     });
 
