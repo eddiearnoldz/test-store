@@ -90,6 +90,7 @@ class OrderHistoryList extends HTMLElement {
         btn.classList.add('oh-cancel-btn--done');
         const order = this.orders.find((o) => o.sourceOrderId === sourceOrderId);
         if (order) order.status = 'cancelled';
+        this.showToast('Order cancelled. You will receive a full refund to your original payment method within 3 days.');
       } else {
         btn.classList.remove('oh-cancel-btn--busy');
         btn.textContent = 'Cancel Order';
