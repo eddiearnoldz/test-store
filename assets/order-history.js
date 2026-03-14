@@ -164,7 +164,7 @@ class OrderHistoryList extends HTMLElement {
                 <span class="oh-badge oh-badge--${order.source}">${order.source === 'shopify' ? 'Online' : 'In-Store'}</span>
               </div>
               <div class="oh-col oh-col--date">${this.fmtDate(order.orderDate)}</div>
-              <div class="oh-col oh-col--payment">${this.fmtStatus(order.financialStatus)}</div>
+              <div class="oh-col oh-col--payment">${order.status === 'cancelled' ? (Date.now() - new Date(order.updatedAt).getTime() > 3 * 86400000 ? 'Refunded' : 'Refunding') : this.fmtStatus(order.financialStatus)}</div>
               <div class="oh-col oh-col--total">${this.fmtCurrency(order.totalAmount, order.currency)}</div>
               <div class="oh-col oh-col--chevron"><span class="oh-chevron">&#8250;</span></div>
             </div>
@@ -195,7 +195,7 @@ class OrderHistoryList extends HTMLElement {
               ${order.source === 'shopify' && (order.fulfillmentStatus === 'unfulfilled' || order.status === 'cancelled') ? `
                 <div class="oh-cancel-row">
                   <div class="oh-cancel-btn${order.status === 'cancelled' ? ' oh-cancel-btn--done' : ''}" ${order.status !== 'cancelled' ? `data-source-order-id="${order.sourceOrderId}"` : ''}>
-                    ${order.status === 'cancelled' ? (Date.now() - new Date(order.updatedAt).getTime() > 3 * 86400000 ? 'Refunded' : 'Refunding') : 'Cancel Order'}
+                    ${order.status === 'cancelled' ? 'Cancelled' : 'Cancel Order'}
                   </div>
                 </div>
               ` : ''}
