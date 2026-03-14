@@ -195,7 +195,7 @@ class OrderHistoryList extends HTMLElement {
               ${order.source === 'shopify' && (order.fulfillmentStatus === 'unfulfilled' || order.status === 'cancelled') ? `
                 <div class="oh-cancel-row">
                   <div class="oh-cancel-btn${order.status === 'cancelled' ? ' oh-cancel-btn--done' : ''}" ${order.status !== 'cancelled' ? `data-source-order-id="${order.sourceOrderId}"` : ''}>
-                    ${order.status === 'cancelled' ? 'Cancelled' : 'Cancel Order'}
+                    ${order.status === 'cancelled' ? (Date.now() - new Date(order.updatedAt).getTime() > 3 * 86400000 ? 'Refunded' : 'Refunding') : 'Cancel Order'}
                   </div>
                 </div>
               ` : ''}
