@@ -78,7 +78,7 @@ class OrderHistoryList extends HTMLElement {
     btn.textContent = 'Cancelling...';
 
     try {
-      const baseUrl = this.proxyUrl.replace(/\/orders$/, '');
+      const baseUrl = this.proxyUrl.split('?')[0].replace(/\/orders$/, '');
       const res = await fetch(`${baseUrl}/orders/${sourceOrderId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -228,7 +228,10 @@ class OrderHistoryList extends HTMLElement {
 
     // Cancel buttons
     this.querySelectorAll('.oh-cancel-btn').forEach((btn) => {
-      btn.addEventListener('click', () => this.cancelOrder(btn.dataset.sourceOrderId, btn));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.cancelOrder(btn.dataset.sourceOrderId, btn);
+      });
     });
 
     this.querySelectorAll('.oh-filter').forEach((btn) => {
