@@ -156,7 +156,7 @@ class OrderHistoryList extends HTMLElement {
         </div>
 
         ${this.paginatedOrders.map((order) => `
-          <div class="oh-order">
+          <div class="oh-order${order.status === 'cancelled' ? ' oh-order--cancelled' : ''}">
 
             <button type="button" class="oh-order__row" aria-expanded="false" data-order-id="${order.sourceOrderId}">
               <div class="oh-col oh-col--id">${order.orderNumber}</div>
@@ -192,10 +192,10 @@ class OrderHistoryList extends HTMLElement {
                   : `<div class="oh-item">${inner}</div>`;
               }).join('')}
 
-              ${order.source === 'shopify' && order.fulfillmentStatus === 'unfulfilled' && order.status !== 'cancelled' ? `
+              ${order.source === 'shopify' && (order.fulfillmentStatus === 'unfulfilled' || order.status === 'cancelled') ? `
                 <div class="oh-cancel-row">
-                  <div class="oh-cancel-btn" data-source-order-id="${order.sourceOrderId}">
-                    Cancel Order
+                  <div class="oh-cancel-btn${order.status === 'cancelled' ? ' oh-cancel-btn--done' : ''}" ${order.status !== 'cancelled' ? `data-source-order-id="${order.sourceOrderId}"` : ''}>
+                    ${order.status === 'cancelled' ? 'Cancelled' : 'Cancel Order'}
                   </div>
                 </div>
               ` : ''}
