@@ -73,6 +73,53 @@ class OrderHistoryList extends HTMLElement {
     return s ? s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '—';
   }
 
+  async cancelOrder(sourceOrderId, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Cancelling...';
+
+    try {
+      const baseUrl = this.proxyUrl.replace(/\/orders$/, '');
+      const res = await fetch(`${baseUrl}/orders/${sourceOrderId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (res.ok) {
+        btn.textContent = 'Cancelled';
+        btn.classList.add('oh-cancel-btn--done');
+        // Update local state so re-renders reflect the change
+        const order = this.orders.find((o) => o.sourceOrderId === sourceOrderId);
+        if (order) order.status = 'cancelled';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Cancel Order';
+        this.showToast('Order cancellation unsuccessful. Please contact customer support.');
+      }
+    } catch (_) {
+      btn.disabled = false;
+      btn.textContent = 'Cancel Order';
+      this.showToast('Order cancellation unsuccessful. Please contact customer support.');
+    }
+  }
+
+  showToast(message) {
+    const existing = document.querySelector('.oh-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'oh-toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(() => toast.classList.add('oh-toast--visible'));
+
+    setTimeout(() => {
+      toast.classList.remove('oh-toast--visible');
+      setTimeout(() => toast.remove(), 400);
+    }, 4000);
+  }
+
   renderLoading()   { this.innerHTML = `<div class="oh-state">Loading your order history…</div>`; }
   renderAuthError() { this.innerHTML = `<div class="oh-state">Please log in to view your order history.</div>`; }
   renderError()     { this.innerHTML = `<div class="oh-state oh-state--error">Unable to load order history. Please try again later.</div>`; }
@@ -143,6 +190,14 @@ class OrderHistoryList extends HTMLElement {
                   ? `<a href="/products/${item.productHandle}" class="oh-item">${inner}</a>`
                   : `<div class="oh-item">${inner}</div>`;
               }).join('')}
+
+              ${order.source === 'shopify' && order.fulfillmentStatus === 'unfulfilled' && order.status !== 'cancelled' ? `
+                <div class="oh-cancel-row">
+                  <button type="button" class="oh-cancel-btn" data-source-order-id="${order.sourceOrderId}">
+                    Cancel Order
+                  </button>
+                </div>
+              ` : ''}
             </div>
 
           </div>
@@ -169,6 +224,11 @@ class OrderHistoryList extends HTMLElement {
         btn.setAttribute('aria-expanded', String(!open));
         btn.nextElementSibling.classList.toggle('oh-items--open', !open);
       });
+    });
+
+    // Cancel buttons
+    this.querySelectorAll('.oh-cancel-btn').forEach((btn) => {
+      btn.addEventListener('click', () => this.cancelOrder(btn.dataset.sourceOrderId, btn));
     });
 
     this.querySelectorAll('.oh-filter').forEach((btn) => {
