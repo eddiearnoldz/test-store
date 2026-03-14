@@ -92,13 +92,12 @@
   }
   .oh-order:last-child { border-bottom: none; }
   .oh-order--cancelled,
-  .customer .oh-order--cancelled .oh-order__row { background: #fff5f5; }
+  .oh-order--cancelled .oh-order__row { background: #fff5f5; }
 
-  /* Clickable order row — all:unset removes all browser button defaults */
-  .customer .oh-order__row {
-    all: unset;
+  /* Clickable order row */
+  .oh-order__row {
     box-sizing: border-box;
-    display: flex !important;
+    display: flex;
     align-items: center;
     width: 100%;
     cursor: pointer;
@@ -115,7 +114,7 @@
     color: #999;
     transition: transform 0.2s ease;
   }
-  .customer .oh-order__row[aria-expanded="true"] .oh-chevron {
+  .oh-order__row[aria-expanded="true"] .oh-chevron {
     transform: rotate(90deg);
   }
 

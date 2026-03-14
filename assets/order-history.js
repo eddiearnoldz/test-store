@@ -158,7 +158,7 @@ class OrderHistoryList extends HTMLElement {
         ${this.paginatedOrders.map((order) => `
           <div class="oh-order${order.status === 'cancelled' ? ' oh-order--cancelled' : ''}">
 
-            <button type="button" class="oh-order__row" aria-expanded="false" data-order-id="${order.sourceOrderId}">
+            <div class="oh-order__row" aria-expanded="false" data-order-id="${order.sourceOrderId}">
               <div class="oh-col oh-col--id">${order.orderNumber}</div>
               <div class="oh-col oh-col--source">
                 <span class="oh-badge oh-badge--${order.source}">${order.source === 'shopify' ? 'Online' : 'In-Store'}</span>
@@ -167,7 +167,7 @@ class OrderHistoryList extends HTMLElement {
               <div class="oh-col oh-col--payment">${this.fmtStatus(order.financialStatus)}</div>
               <div class="oh-col oh-col--total">${this.fmtCurrency(order.totalAmount, order.currency)}</div>
               <div class="oh-col oh-col--chevron"><span class="oh-chevron">&#8250;</span></div>
-            </button>
+            </div>
 
             <div class="oh-items">
               <div class="oh-items__head">
@@ -228,7 +228,7 @@ class OrderHistoryList extends HTMLElement {
     });
 
     // Cancel divs
-    this.querySelectorAll('.oh-cancel-btn').forEach((el) => {
+    this.querySelectorAll('.oh-cancel-btn:not(.oh-cancel-btn--done)').forEach((el) => {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         this.cancelOrder(el.dataset.sourceOrderId, el);
